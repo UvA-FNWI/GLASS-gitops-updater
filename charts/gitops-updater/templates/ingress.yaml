@@ -10,6 +10,7 @@ spec:
   tls:
     - hosts:
         - "{{ .Values.hostname }}"
+      secretName: gitops-updater-cert
   rules:
     - host: "{{ .Values.hostname }}"
       http:
