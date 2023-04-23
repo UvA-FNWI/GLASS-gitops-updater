@@ -23,6 +23,8 @@ spec:
       {{- end }}
     spec:
       automountServiceAccountToken: false
+      imagePullSecrets:
+        - name: harbor
       containers:
         - name: gitops-updater
           image: "{{ .Values.image }}:{{ .Values.tag }}"
