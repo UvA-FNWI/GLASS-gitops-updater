@@ -15,6 +15,7 @@ class ConfigEntry:
     secret_path: str
     handler: str
     provider: str
+    paths: List[str]
 
     def valid_secret(self, secret: str) -> bool:
         with open(self.secret_path, 'r') as file:
