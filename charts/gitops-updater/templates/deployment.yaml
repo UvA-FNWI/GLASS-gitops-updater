@@ -22,7 +22,6 @@ spec:
         vault.security.banzaicloud.io/vault-path: "{{ .Values.vault.path }}"
       {{- end }}
     spec:
-      automountServiceAccountToken: false
       imagePullSecrets:
         - name: harbor
       containers:
