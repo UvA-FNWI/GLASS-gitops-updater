@@ -5,6 +5,8 @@ from ruamel.yaml import YAML
 from gitops_updater.providers.github import GitHubProvider
 from gitops_updater.providers.gitlab import GitLabProvider
 
+from typing import List
+
 
 @dataclass
 class ConfigEntry:
@@ -32,10 +34,11 @@ class ConfigReader:
                 if row['name'] == name:
                     return ConfigEntry(
                         row['name'],
-                        row['path'],
+                        row['path'] if 'path' in row else None,
                         row['secretPath'],
                         row['handler'],
-                        row['provider']
+                        row['provider'],
+                        row['paths'] if 'paths' in row else None
                     )
 
         raise Exception("Couldn't read config")

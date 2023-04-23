@@ -13,23 +13,33 @@ class ArgoCD:
     provider: GitProvider
 
     def handle(self, version: str) -> dict:
+        multiple = self.config.paths
+        paths = self.config.paths if multiple else [self.config.path]
 
-        file: GitFile
-        file = self.provider.get_file(self.config.path)
+        errors = []
 
-        yaml_file = ArgoCDYamlFile(file.content(), self.config.name)
-        current_version = yaml_file.current_version()
-        target_version = semver.VersionInfo.parse(version)
+        for path in paths:
+            file: GitFile
+            file = self.provider.get_file(path)
 
-        if target_version == current_version:
-            return {'message': 'Already up-to-date'}
+            yaml_file = ArgoCDYamlFile(file.content(), None if multiple else self.config.name)
+            current_version = yaml_file.current_version()
+            target_version = semver.VersionInfo.parse(version)
 
-        if current_version > target_version:
-            raise Exception('Not downgrading')
+            if target_version == current_version:
+                errors.append(f'{path}: already up-to-date')
+            elif current_version > target_version:
+                errors.append(f'{path}: not downgrading')
+            else:
+                updated_content = yaml_file.update(version)
+                message = f'Update {path} to {target_version}'
+                self.provider.update_file(file, message, updated_content)
 
-        updated_content = yaml_file.update(version)
-        message = f'Update {self.config.name} to {target_version}'
-        self.provider.update_file(file, message, updated_content)
+        if len(errors) > 0:
+            return {
+                'message': f'error',
+                'errors': errors
+            }
 
         return {
             'message': f'updated successfully',
@@ -44,7 +54,7 @@ class ArgoCDYamlFile:
         self.yaml_content = list(self.yaml_loader.load_all(content))
 
         for segment in self.yaml_content:
-            if segment['metadata'] is None or segment['metadata']['name'] != name:
+            if segment['metadata'] is None or (name is not None and segment['metadata']['name'] != name):
                 continue
 
             self.version = segment['spec']['source']['targetRevision']
