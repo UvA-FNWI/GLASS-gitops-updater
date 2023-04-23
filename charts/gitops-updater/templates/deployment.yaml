@@ -15,11 +15,17 @@ spec:
       {{- if .Values.azure }}
         aadpodidbinding: gitops-updater-azure-kv
       {{- end }}
+      {{- if .Values.vault }}
+      annotations:
+        vault.security.banzaicloud.io/vault-addr: "{{ .Values.vault.url }}"
+        vault.security.banzaicloud.io/vault-role: "{{ .Values.vault.role }}"
+        vault.security.banzaicloud.io/vault-path: "{{ .Values.vault.path }}"
+      {{- end }}
     spec:
       automountServiceAccountToken: false
       containers:
         - name: gitops-updater
-          image: "{{ .Values.image }}:{{ .Chart.AppVersion }}"
+          image: "{{ .Values.image }}:{{ .Values.tag }}"
           imagePullPolicy: Always
           ports:
             - containerPort: 80
@@ -28,6 +34,12 @@ spec:
               value: "{{ .Chart.AppVersion }}"
             - name: CONFIG_PATH
               value: "/mnt/config/config.yaml"
+            {{- if .Values.vault }}
+            {{- range .Values.vault.secrets }}
+            - name: {{ .target }}
+              value: "vault:{{ $.Values.vault.path }}/data/{{ $.Values.vault.role }}#{{ .source }}"
+            {{- end }}
+            {{- end }}
           resources:
             limits:
               cpu: 100m

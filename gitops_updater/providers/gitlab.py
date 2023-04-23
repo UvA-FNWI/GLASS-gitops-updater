@@ -1,3 +1,5 @@
+import os
+
 from gitlab.v4.objects import ProjectFile
 
 from gitops_updater.providers.gitprovider import GitProvider, GitFile
@@ -14,9 +16,7 @@ class GitLabFile(GitFile):
 
 class GitLabProvider(GitProvider):
     def __init__(self, url: str, token_path: str, branch: str, project: str):
-        file = open(token_path, 'r')
-        gitlab_token = file.read()
-        file.close()
+        gitlab_token = os.environ[token_path]
 
         self.client = Gitlab(url, private_token=gitlab_token)
         self.project = self.client.projects.get(project)

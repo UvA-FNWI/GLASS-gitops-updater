@@ -1,0 +1,17 @@
+stages:
+  - build
+
+build-containers:
+  stage: build
+  script:
+    - set -euxo pipefail
+    - docker build -t "${CR_NAME}/gitops-updater:latest" -f Dockerfile .
+    - docker push "${CR_NAME}/gitops-updater:latest"
+
+build-charts:
+  stage: build
+  script:
+    - set -euxo pipefail
+    - export VERSION=$(date "+0.1.%Y%m%d%H%M%S")
+    - helm package --version "${VERSION}" --app-version "${VERSION}" charts/gitops-updater
+    - helm push "gitops-updater-${VERSION}.tgz" ${HELM_REPO}

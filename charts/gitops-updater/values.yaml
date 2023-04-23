@@ -1,6 +1,7 @@
 hostname: "gitops-updater.local"
 ingressClass: "nginx"
-image: ghcr.io/uva/glass-gitops-updater
+image: gitops-updater
+tag: latest
 
 config:
   - name: example-name

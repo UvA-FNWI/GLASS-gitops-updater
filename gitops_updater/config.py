@@ -1,3 +1,5 @@
+import os
+
 from dataclasses import dataclass
 
 from ruamel.yaml import YAML
@@ -18,13 +20,11 @@ class ConfigEntry:
     paths: List[str]
 
     def valid_secret(self, secret: str) -> bool:
-        with open(self.secret_path, 'r') as file:
-            stored_secret = file.read()
-            return stored_secret == secret
+        stored_secret = os.environ[self.secret_path]
+        return stored_secret == secret
 
     def secret(self) -> str:
-        with open(self.secret_path, 'r') as file:
-            return file.read()
+        return os.environ[self.secret_path]
 
 class ConfigReader:
     def find(self, filename: str, name: str) -> ConfigEntry:
