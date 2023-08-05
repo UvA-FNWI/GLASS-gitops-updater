@@ -4,10 +4,11 @@ metadata:
   name: "gitops-updater-ingress"
   namespace: "{{ .Release.Namespace }}"
   annotations:
+    kubernetes.io/ingress.class: "{{ .Values.ingressClass }}"
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /gitops-updater
     cert-manager.io/cluster-issuer: letsencrypt
 spec:
-  ingressClassName: "{{ .Values.ingressClass }}"
   tls:
     - hosts:
         - "{{ .Values.hostname }}"
@@ -16,7 +17,7 @@ spec:
     - host: "{{ .Values.hostname }}"
       http:
         paths:
-          - path: /gitops-updater
+          - path: /gitops-updater(.*)
             pathType: Prefix
             backend:
               service:
