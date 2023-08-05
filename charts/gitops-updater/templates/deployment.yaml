@@ -22,8 +22,10 @@ spec:
         vault.security.banzaicloud.io/vault-path: "{{ .Values.vault.path }}"
       {{- end }}
     spec:
+      {{- if .Values.imagePullSecret }}
       imagePullSecrets:
-        - name: harbor
+        - name: {{ .Values.imagePullSecret }}
+      {{- end }}
       containers:
         - name: gitops-updater
           image: "{{ .Values.image }}:{{ .Values.tag }}"
