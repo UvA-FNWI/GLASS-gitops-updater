@@ -1,2 +1,4 @@
 .idea
 *.tgz
+secret*
+github-token

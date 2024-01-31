@@ -1,7 +1,10 @@
+import os
+
 from github import Github, ContentFile
 from github.GithubException import UnknownObjectException
 
 from gitops_updater.providers.gitprovider import GitProvider, GitFile
+from gitops_updater.utils import get_secret
 
 
 class GitHubFile(GitFile):
@@ -15,9 +18,7 @@ class GitHubFile(GitFile):
 class GitHubProvider(GitProvider):
     def __init__(self, token_path: str, branch: str, repository: str):
 
-        file = open(token_path, 'r')
-        github_token = file.read()
-        file.close()
+        github_token = get_secret(token_path)
 
         self.client = Github(github_token)
         self.repo = self.client.get_repo(repository)

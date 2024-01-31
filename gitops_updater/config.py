@@ -9,6 +9,8 @@ from gitops_updater.providers.gitlab import GitLabProvider
 
 from typing import List
 
+from gitops_updater.utils import get_secret
+
 
 @dataclass
 class ConfigEntry:
@@ -20,11 +22,11 @@ class ConfigEntry:
     paths: List[str]
 
     def valid_secret(self, secret: str) -> bool:
-        stored_secret = os.environ[self.secret_path]
-        return stored_secret == secret
+        return self.secret() == secret
 
     def secret(self) -> str:
-        return os.environ[self.secret_path]
+        return get_secret(self.secret_path)
+
 
 class ConfigReader:
     def find(self, filename: str, name: str) -> ConfigEntry:
