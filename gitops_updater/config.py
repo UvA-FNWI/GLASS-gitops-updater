@@ -19,6 +19,7 @@ class ConfigEntry:
     secret_path: str
     handler: str
     provider: str
+    mapping: str
     paths: List[str]
 
     def valid_secret(self, secret: str) -> bool:
@@ -41,6 +42,7 @@ class ConfigReader:
                         row['secretPath'],
                         row['handler'],
                         row['provider'],
+                        row['mapping'] if 'mapping' in row else None,
                         row['paths'] if 'paths' in row else None
                     )
 
