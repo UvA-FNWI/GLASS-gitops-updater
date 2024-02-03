@@ -12,6 +12,9 @@ data:
       secretPath: {{ .secretPath }}
       handler: {{ .handler }}
       provider: {{ .provider }}
+  {{- if .mapping}}
+      mapping: {{.mapping}}
+  {{- end}}
   {{- if .paths}}
       paths:
       {{- range .paths }}

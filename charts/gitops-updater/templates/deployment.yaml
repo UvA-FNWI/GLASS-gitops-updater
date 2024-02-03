@@ -12,9 +12,6 @@ spec:
     metadata:
       labels:
         app: gitops-updater
-      {{- if .Values.azure }}
-        aadpodidbinding: gitops-updater-azure-kv
-      {{- end }}
       {{- if .Values.vault }}
       annotations:
         vault.security.banzaicloud.io/vault-addr: "{{ .Values.vault.url }}"
