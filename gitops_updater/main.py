@@ -47,7 +47,7 @@ def handle():
                 response = handler.handle_closed_pr(id_)
                 return __json_response(200, response)
             else:
-                response = handler.handle(id_, version)
+                response = handler.handle(id_, version, request.args.get('target'))
                 return __json_response(200, response)
 
         if config.handler == 'argocd':

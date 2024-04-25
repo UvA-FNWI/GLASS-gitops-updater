@@ -24,12 +24,11 @@ class Template:
     config: ConfigEntry
     provider: GitProvider
 
-    def handle(self, id_: int, version: str) -> dict:
+    def handle(self, id_: int, version: str, target: str = None) -> dict:
 
         target_path = self.get_target_path(self.config.path, id_)
         target_exists = self.provider.file_exists(target_path)
 
-        target = None
         template: GitFile
         template = self.provider.get_file(self.config.path)
         if self.config.mapping:
