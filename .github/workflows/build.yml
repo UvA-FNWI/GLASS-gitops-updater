@@ -24,7 +24,7 @@ jobs:
 
     - name: Build chart and release
       env:
-        UPDATER_SECRET: ${{ secrets.UPDATER_SECRET }}
+        UPDATER_SECRET: ${{ secrets.UPDATER_SECRET_DN }}
       run: |
         set -euxo pipefail
         export VERSION=$(date "+0.5.%Y%m%d%H%M%S")
