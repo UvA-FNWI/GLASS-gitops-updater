@@ -1,7 +1,7 @@
 import os
 
 from github import Github, ContentFile
-from github.GithubException import UnknownObjectException
+from github.GithubException import UnknownObjectException, GithubException
 
 from gitops_updater.providers.gitprovider import GitProvider, GitFile
 from gitops_updater.utils import get_secret
@@ -28,6 +28,10 @@ class GitHubProvider(GitProvider):
         try:
             self.repo.get_contents(path, ref=self.branch)
         except UnknownObjectException:
+            return False
+        except GithubException as ge:
+            if ge.status != 404:
+                raise
             return False
 
         return True
