@@ -2,6 +2,7 @@ hostname: "gitops-updater.local"
 ingressClass: "nginx"
 image: gitops-updater
 tag: latest
+clusterIssuer: letsencrypt
 
 config:
   - name: example-name
@@ -22,3 +23,9 @@ providers:
     branch: main
     type: GitLab
     tokenPath: gitlab_token
+
+externalSecrets:
+  enabled: false
+  secretStoreRef:
+    name: hashicorp-vault
+    kind: ClusterSecretStore

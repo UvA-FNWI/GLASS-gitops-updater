@@ -6,7 +6,7 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: "{{ .Values.ingressClass }}"
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
-    cert-manager.io/cluster-issuer: letsencrypt
+    cert-manager.io/cluster-issuer: "{{ .Values.clusterIssuer }}"
     acme.cert-manager.io/http01-ingress-class: {{ .Values.ingressClass }}
 spec:
   tls:

@@ -12,16 +12,10 @@ spec:
     metadata:
       labels:
         app: gitops-updater
-      {{- if .Values.vault }}
-      annotations:
-        vault.security.banzaicloud.io/vault-addr: "{{ .Values.vault.url }}"
-        vault.security.banzaicloud.io/vault-role: "{{ .Values.vault.role }}"
-        vault.security.banzaicloud.io/vault-path: "{{ .Values.vault.path }}"
-      {{- end }}
     spec:
-      {{- if .Values.imagePullSecret }}
+      {{- with (include "gitops-updater.imagePullSecretName" .) }}
       imagePullSecrets:
-        - name: {{ .Values.imagePullSecret }}
+        - name: {{ . }}
       {{- end }}
       containers:
         - name: gitops-updater
@@ -34,16 +28,10 @@ spec:
               value: "{{ .Chart.AppVersion }}"
             - name: CONFIG_PATH
               value: "/mnt/config/config.yaml"
-            {{- if .Values.vault }}
-            {{- range .Values.vault.secrets }}
-            - name: {{ .target }}
-              value: "vault:{{ $.Values.vault.path }}/data/{{ $.Values.vault.role }}#{{ .source }}"
-            {{- end }}
-            {{- end }}
-          {{- if .Values.secretName }}
+          {{- with (include "gitops-updater.secretName" .) }}
           envFrom:
             - secretRef:
-                name: {{ .Values.secretName }}
+                name: {{ . }}
           {{- end }}
           resources:
             limits:
