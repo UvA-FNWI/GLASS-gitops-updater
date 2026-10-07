@@ -13,5 +13,14 @@ dependencies = [
     "semver",
 ]
 
+[dependency-groups]
+dev = [
+    "pytest",
+    "ruff",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+
 [tool.uv]
 package = false

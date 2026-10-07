@@ -110,3 +110,19 @@ Build the container image:
 ```sh
 docker build -t gitops-updater:local .
 ```
+
+Run the same checks as PR CI (no cluster or remote GitOps repo required):
+
+```sh
+uv sync --frozen --all-groups
+uv run ruff check .
+uv run ruff format --check .
+uv run pytest -v
+```
+
+Optional: run the app locally (handlers still need a real config file and Git credentials to update repos):
+
+```sh
+export CONFIG_PATH=/path/to/config.yaml
+uv run flask --app gitops_updater.main run --port 8080
+```
