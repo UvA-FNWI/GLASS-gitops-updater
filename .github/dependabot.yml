@@ -24,3 +24,17 @@ updates:
       day: monday
       time: "06:00"
       timezone: "Europe/Amsterdam"
+
+  - package-ecosystem: docker
+    directory: "/"
+    schedule:
+      interval: monthly
+      day: monday
+      time: "06:00"
+      timezone: "Europe/Amsterdam"
+    cooldown:
+      default-days: 3
+    ignore:
+      # Stay on Python 3.14 until we explicitly widen requires-python and retest.
+      - dependency-name: "python"
+        versions: [">= 3.15"]
