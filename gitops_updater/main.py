@@ -10,6 +10,7 @@ from gitops_updater.auth import (
     resolve_updater_secret,
 )
 from gitops_updater.config import ConfigReader
+from gitops_updater.errors import public_error_message
 from gitops_updater.handlers.argocd import ArgoCD
 from gitops_updater.handlers.template import Template
 
@@ -88,7 +89,7 @@ def handle():
             body, headers = __with_deprecation(response, resolved.method)
             return __json_response(200, body, headers)
     except Exception as e:
-        return __json_response(422, {"error": str(e)})
+        return __json_response(422, {"error": public_error_message(e)})
 
 
 @app.route("/gitops-updater/webhooks/github", methods=["POST"])
@@ -135,7 +136,7 @@ def github_webhook():
 
         return __json_response(200, response)
     except Exception as e:
-        return __json_response(422, {"error": str(e)})
+        return __json_response(422, {"error": public_error_message(e)})
 
 
 if __name__ == "__main__":

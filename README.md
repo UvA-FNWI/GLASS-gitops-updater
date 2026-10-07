@@ -52,8 +52,12 @@ config:
 ```
 Given this configuration, the GET-call that should be executed looks like this:
 ```sh
-curl -s https://your-domain.com/gitops-updater?name=example-name&version=1.0.1&secret=very-secret
+curl -fsS \
+  -H "Authorization: Bearer <updater-secret>" \
+  "https://your-domain.com/gitops-updater?name=example-name&version=1.0.1"
 ```
+The query parameter `secret` is deprecated and will be removed; use the `Authorization: Bearer` header instead.
+The repository deploy workflow (`.github/workflows/build.yml`) will switch to Bearer after the updated image is running in tst.
 The `argocd`-handler will validate if the secret matches the secret provided in the configuration. After that
 it will retrieve the file `directory/manifest.yaml` and expect a file that looks a bit like this:
 ```yaml

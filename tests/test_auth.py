@@ -71,6 +71,50 @@ def test_bearer_auth_success_without_deprecation(client, monkeypatch):
     assert "Deprecation" not in response.headers
 
 
+def test_handler_errors_do_not_leak_internal_details(client, monkeypatch):
+    monkeypatch.setattr(
+        ConfigReader,
+        "find",
+        lambda self, _filename, _name: (_ for _ in ()).throw(
+            RuntimeError("token=super-secret-path /mnt/foo")
+        ),
+    )
+    response = client.get(
+        "/gitops-updater",
+        query_string={"name": "test-app", "version": "1.0.0"},
+        headers={"Authorization": "Bearer top-secret"},
+    )
+    assert response.status_code == 422
+    assert response.json["error"] == "Request processing failed"
+    assert "super-secret" not in response.json["error"]
+
+
+def test_invalid_template_id_returns_safe_error(client, monkeypatch):
+    entry = type(
+        "Entry",
+        (),
+        {
+            "handler": "template",
+            "provider": "test-github",
+            "valid_secret": lambda self, _secret: True,
+        },
+    )()
+    monkeypatch.setattr(ConfigReader, "find", lambda self, _f, _n: entry)
+    monkeypatch.setattr(
+        ConfigReader,
+        "find_provider",
+        lambda self, _filename, _name: object(),
+    )
+
+    response = client.get(
+        "/gitops-updater",
+        query_string={"name": "test-app", "version": "1.0.0", "id": "not-a-number"},
+        headers={"Authorization": "Bearer top-secret"},
+    )
+    assert response.status_code == 422
+    assert response.json["error"] == "Invalid request"
+
+
 def test_query_secret_success_includes_deprecation(client, monkeypatch):
     monkeypatch.setattr(
         ConfigReader,
