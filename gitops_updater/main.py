@@ -5,8 +5,8 @@ import os
 from flask import Flask, json, request
 
 from gitops_updater.auth import (
-    AuthMethod,
     DEPRECATION_MESSAGE,
+    AuthMethod,
     resolve_updater_secret,
 )
 from gitops_updater.config import ConfigReader
@@ -33,6 +33,21 @@ def __with_deprecation(payload: dict, auth_method: AuthMethod):
     body = {**payload, "deprecation": DEPRECATION_MESSAGE}
     headers = {"Deprecation": "true"}
     return body, headers
+
+
+@app.get("/healthz")
+def healthz():
+    return __json_response(200, {"status": "ok"})
+
+
+@app.get("/readyz")
+def readyz():
+    config_path = os.environ.get("CONFIG_PATH")
+    if not config_path or not os.path.isfile(config_path):
+        return __json_response(
+            503, {"status": "not ready", "reason": "config unavailable"}
+        )
+    return __json_response(200, {"status": "ready"})
 
 
 @app.route("/gitops-updater")

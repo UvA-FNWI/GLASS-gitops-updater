@@ -1,9 +1,7 @@
-import os
+from github import ContentFile, Github
+from github.GithubException import GithubException, UnknownObjectException
 
-from github import Github, ContentFile
-from github.GithubException import UnknownObjectException, GithubException
-
-from gitops_updater.providers.gitprovider import GitProvider, GitFile
+from gitops_updater.providers.gitprovider import GitFile, GitProvider
 from gitops_updater.utils import get_secret
 
 
@@ -46,9 +44,13 @@ class GitHubProvider(GitProvider):
     def update_file(self, gitfile: GitHubFile, message: str, content: str):
         content_file: ContentFile
         content_file = gitfile.source
-        self.repo.update_file(content_file.path, message, content, content_file.sha, branch=self.branch)
+        self.repo.update_file(
+            content_file.path, message, content, content_file.sha, branch=self.branch
+        )
 
     def delete_file(self, gitfile: GitFile, message: str):
         content_file: ContentFile
         content_file = gitfile.source
-        self.repo.delete_file(content_file.path, message, content_file.sha, branch=self.branch)
+        self.repo.delete_file(
+            content_file.path, message, content_file.sha, branch=self.branch
+        )

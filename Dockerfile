@@ -1,19 +1,32 @@
-FROM python:3.14-alpine
+# syntax=docker/dockerfile:1
+
+FROM python:3.14-alpine AS builder
 
 RUN apk update && apk upgrade \
-    && apk add --no-cache gcc musl-dev libffi-dev make
+    && apk add --no-cache gcc musl-dev libffi-dev make \
+    && rm -rf /var/cache/apk/*
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 WORKDIR /app
 
 ENV UV_COMPILE_BYTECODE=1 \
-    UV_LINK_MODE=copy \
-    PATH="/app/.venv/bin:$PATH"
+    UV_LINK_MODE=copy
 
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
 
+FROM python:3.14-alpine AS runtime
+
+RUN apk update && apk upgrade \
+    && apk add --no-cache libffi \
+    && rm -rf /var/cache/apk/*
+
+WORKDIR /app
+
+ENV PATH="/app/.venv/bin:$PATH"
+
+COPY --from=builder /app/.venv /app/.venv
 COPY gitops_updater /app/gitops_updater
 COPY main.py /app/main.py
 COPY gunicorn_conf.py /app/gunicorn_conf.py

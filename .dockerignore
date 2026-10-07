@@ -1,0 +1,15 @@
+.git
+.github
+.gitignore
+.venv
+.pytest_cache
+.ruff_cache
+__pycache__
+**/__pycache__
+**/*.pyc
+charts
+docs
+tests
+*.md
+Pipfile*
+agent-transcripts

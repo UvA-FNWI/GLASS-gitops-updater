@@ -33,12 +33,14 @@ class GitLabProvider(GitProvider):
         return GitLabFile(f)
 
     def create_file(self, path: str, content: str, message: str):
-        self.project.files.create({
-            'file_path': path,
-            'branch': self.branch,
-            'content': content,
-            'commit_message': message
-        })
+        self.project.files.create(
+            {
+                "file_path": path,
+                "branch": self.branch,
+                "content": content,
+                "commit_message": message,
+            }
+        )
 
     def update_file(self, gitfile: GitLabFile, message: str, content: str):
         gitfile.source.content = content
