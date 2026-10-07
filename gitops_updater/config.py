@@ -1,4 +1,4 @@
-import os
+import hmac
 
 from dataclasses import dataclass
 
@@ -23,7 +23,9 @@ class ConfigEntry:
     paths: List[str]
 
     def valid_secret(self, secret: str) -> bool:
-        return self.secret() == secret
+        expected = self.secret().strip().encode("utf-8")
+        provided = secret.strip().encode("utf-8")
+        return hmac.compare_digest(expected, provided)
 
     def secret(self) -> str:
         return get_secret(self.secret_path)
