@@ -1,4 +1,7 @@
 .idea
+.venv
+__pycache__/
+*.py[cod]
 *.tgz
 secret*
 github-token

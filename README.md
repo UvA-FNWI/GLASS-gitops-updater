@@ -89,3 +89,18 @@ spec:
 Please note that the value of `metadata.name` should match the name of the configuration line. When the secret
 matches, the file exists and the name matches, it will retrieve the current version (`1.0.0`) and to a semver-comparison.
 Only when the requested version (`1.0.1`) is higher than the current one, it will perform a commit where it updates the version.
+
+Development
+-
+Install [uv](https://docs.astral.sh/uv/), then from the repository root:
+
+```sh
+uv sync
+uv run python -c "import gitops_updater.main"
+```
+
+To refresh the lockfile after changing dependencies in `pyproject.toml`:
+
+```sh
+uv lock
+```
