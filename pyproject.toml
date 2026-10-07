@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "flask",
+    "gunicorn",
     "pygithub",
     "python-gitlab",
     "ruamel.yaml",

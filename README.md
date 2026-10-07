@@ -104,3 +104,9 @@ To refresh the lockfile after changing dependencies in `pyproject.toml`:
 ```sh
 uv lock
 ```
+
+Build the container image:
+
+```sh
+docker build -t gitops-updater:local .
+```
