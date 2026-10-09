@@ -6,7 +6,7 @@ RUN apk update && apk upgrade \
     && apk add --no-cache gcc musl-dev libffi-dev make \
     && rm -rf /var/cache/apk/*
 
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+COPY --from=ghcr.io/astral-sh/uv:0.9.0@sha256:8f926a80debadba6f18442030df316c0e2b28d6af62d1292fb44b1c874173dc0 /uv /usr/local/bin/uv
 
 WORKDIR /app
 
