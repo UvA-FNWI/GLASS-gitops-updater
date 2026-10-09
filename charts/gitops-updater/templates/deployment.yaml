@@ -19,6 +19,9 @@ spec:
       {{- end }}
     spec:
       automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       {{- if .Values.azure }}
       serviceAccountName: gitops-updater-sa
       {{- end }}
