@@ -75,6 +75,16 @@ def test_bearer_auth_success_without_deprecation(client, monkeypatch):
     assert "Deprecation" not in response.headers
 
 
+def test_unknown_config_name(client):
+    response = client.get(
+        "/gitops-updater",
+        query_string={"name": "does-not-exist", "version": "1.0.0"},
+        headers={"Authorization": "Bearer top-secret"},
+    )
+    assert response.status_code == 422
+    assert response.json["error"] == 'Unknown configuration name "does-not-exist"'
+
+
 def test_handler_errors_do_not_leak_internal_details(client, monkeypatch):
     monkeypatch.setattr(
         ConfigReader,
