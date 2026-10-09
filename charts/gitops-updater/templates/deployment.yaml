@@ -12,8 +12,14 @@ spec:
     metadata:
       labels:
         app: gitops-updater
+      {{- if .Values.azure }}
+        azure.workload.identity/use: "true"
+      {{- end }}
     spec:
       automountServiceAccountToken: false
+      {{- if .Values.azure }}
+      serviceAccountName: gitops-updater-sa
+      {{- end }}
       {{- with (include "gitops-updater.imagePullSecretName" .) }}
       imagePullSecrets:
         - name: {{ . }}
