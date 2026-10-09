@@ -1,7 +1,8 @@
 hostname: "gitops-updater.local"
 ingressClass: "nginx"
 image: gitops-updater
-tag: latest
+# Empty tag uses Chart.AppVersion, which CI sets to VERSION when packaging the chart.
+tag: ""
 clusterIssuer: letsencrypt
 
 config:
