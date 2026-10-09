@@ -58,7 +58,11 @@ curl -fsS \
   -H "Authorization: Bearer <updater-secret>" \
   "https://your-domain.com/gitops-updater?name=example-name&version=1.0.1"
 ```
-The query parameter `secret` is deprecated and will be removed; use the `Authorization: Bearer` header instead.
+The query parameter `secret` is deprecated (response includes `Deprecation` and `Sunset` headers until removal on **2027-01-07**); use the `Authorization: Bearer` header instead.
+
+HTTP status codes: **401** for missing or invalid authentication; **409** when a downgrade is blocked; **422** for other client or processing errors. Successful updates use **200**.
+
+To allow lowering `targetRevision`, set `allowDowngrade: true` on a config entry (Helm `config[].allowDowngrade`) or pass `allowDowngrade=true` on the request query string.
 The repository deploy workflow (`.github/workflows/build.yml`) will switch to Bearer after the updated image is running in tst.
 The `argocd`-handler will validate if the secret matches the secret provided in the configuration. After that
 it will retrieve the file `directory/manifest.yaml` and expect a file that looks a bit like this:

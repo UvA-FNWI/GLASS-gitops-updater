@@ -39,6 +39,10 @@
           "paths": {
             "type": "array",
             "items": { "type": "string" }
+          },
+          "allowDowngrade": {
+            "type": "boolean",
+            "description": "When true, permit lowering spec.source.targetRevision for this config entry."
           }
         },
         "additionalProperties": false

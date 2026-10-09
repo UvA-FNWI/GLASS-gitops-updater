@@ -2,7 +2,11 @@ from pathlib import Path
 
 import pytest
 
-from gitops_updater.auth import QUERY_SECRET_SUNSET_DATE, resolve_updater_secret
+from gitops_updater.auth import (
+    QUERY_SECRET_SUNSET_DATE,
+    QUERY_SECRET_SUNSET_HTTPDATE,
+    resolve_updater_secret,
+)
 from gitops_updater.config import ConfigReader
 from gitops_updater.main import app
 
@@ -36,7 +40,7 @@ def test_missing_authentication(client):
         "/gitops-updater",
         query_string={"name": "test-app", "version": "1.0.0"},
     )
-    assert response.status_code == 422
+    assert response.status_code == 401
     assert "Bearer" in response.json["error"]
 
 
@@ -46,7 +50,7 @@ def test_invalid_bearer_secret(client):
         query_string={"name": "test-app", "version": "1.0.0"},
         headers={"Authorization": "Bearer wrong"},
     )
-    assert response.status_code == 422
+    assert response.status_code == 401
     assert response.json["error"] == "Invalid secret"
 
 
@@ -58,7 +62,7 @@ def test_bearer_auth_success_without_deprecation(client, monkeypatch):
     )
     monkeypatch.setattr(
         "gitops_updater.handlers.argocd.ArgoCD.handle",
-        lambda self, version: {"message": "ok"},
+        lambda self, version, **_: {"message": "ok"},
     )
     response = client.get(
         "/gitops-updater",
@@ -123,7 +127,7 @@ def test_query_secret_success_includes_deprecation(client, monkeypatch):
     )
     monkeypatch.setattr(
         "gitops_updater.handlers.argocd.ArgoCD.handle",
-        lambda self, version: {"message": "ok"},
+        lambda self, version, **_: {"message": "ok"},
     )
     response = client.get(
         "/gitops-updater",
@@ -137,3 +141,4 @@ def test_query_secret_success_includes_deprecation(client, monkeypatch):
     assert response.json["message"] == "ok"
     assert QUERY_SECRET_SUNSET_DATE in response.json["deprecation"]
     assert response.headers.get("Deprecation") == "true"
+    assert response.headers.get("Sunset") == QUERY_SECRET_SUNSET_HTTPDATE

@@ -17,6 +17,7 @@ class ConfigEntry:
     provider: str
     mapping: str
     paths: list[str]
+    allow_downgrade: bool = False
 
     def valid_secret(self, secret: str) -> bool:
         expected = self.secret().strip().encode("utf-8")
@@ -42,6 +43,7 @@ class ConfigReader:
                         row["provider"],
                         row.get("mapping", None),
                         row.get("paths", None),
+                        bool(row.get("allowDowngrade", False)),
                     )
 
         raise Exception("Couldn't read config")

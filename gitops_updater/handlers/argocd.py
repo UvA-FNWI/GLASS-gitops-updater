@@ -1,10 +1,12 @@
 from dataclasses import dataclass
+from http import HTTPStatus
 
 import semver
 from ruamel.yaml import YAML
 from ruamel.yaml.compat import StringIO
 
 from gitops_updater.config import ConfigEntry
+from gitops_updater.handlers.result import HandlerResult
 from gitops_updater.providers.gitprovider import GitFile, GitProvider
 
 
@@ -13,11 +15,12 @@ class ArgoCD:
     config: ConfigEntry
     provider: GitProvider
 
-    def handle(self, version: str) -> dict:
+    def handle(self, version: str, *, allow_downgrade: bool = False) -> HandlerResult:
         multiple = self.config.paths
         paths = self.config.paths if multiple else [self.config.path]
 
         errors = []
+        downgrades_blocked = False
 
         for path in paths:
             file: GitFile
@@ -32,20 +35,30 @@ class ArgoCD:
             if target_version == current_version:
                 errors.append(f"{path}: already up-to-date")
             elif current_version > target_version:
-                errors.append(f"{path}: not downgrading")
+                if allow_downgrade:
+                    updated_content = yaml_file.update(version)
+                    message = f"Downgrade {path} to {target_version}"
+                    self.provider.update_file(file, message, updated_content)
+                else:
+                    downgrades_blocked = True
+                    errors.append(f"{path}: not downgrading")
             else:
                 updated_content = yaml_file.update(version)
                 message = f"Update {path} to {target_version}"
                 self.provider.update_file(file, message, updated_content)
 
         if len(errors) > 0:
-            return {"message": "error", "errors": errors}
+            status = HTTPStatus.CONFLICT if downgrades_blocked else HTTPStatus.OK
+            return HandlerResult({"message": "error", "errors": errors}, status=status)
 
-        return {
-            "message": "updated successfully",
-            "old_version": str(current_version),
-            "new_version": version,
-        }
+        return HandlerResult(
+            {
+                "message": "updated successfully",
+                "old_version": str(current_version),
+                "new_version": version,
+            },
+            status=HTTPStatus.OK,
+        )
 
 
 class ArgoCDYamlFile:
