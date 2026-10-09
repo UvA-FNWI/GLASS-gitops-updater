@@ -100,6 +100,10 @@ Please note that the value of `metadata.name` should match the name of the confi
 matches, the file exists and the name matches, it will retrieve the current version (`1.0.0`) and to a semver-comparison.
 Only when the requested version (`1.0.1`) is higher than the current one, it will perform a commit where it updates the version.
 
+Releases
+-
+The FNWI release line is **`1.0.*`**. `Chart.yaml` and `pyproject.toml` use **`1.0.0`** as the development baseline; CI on `main` publishes Helm charts as **`1.0.YYYYMMDDHHMMSS`** (and `appVersion` matches) to OCI, then bumps the DataNose GitOps `targetRevision` via the updater API. Docker images are pushed as **`latest`** on the same pipeline. Older **`0.5.*`** chart versions in GitOps are the pre-FNWI line; the first deploy after this change must use a **`1.0.*`** chart version **semver-greater** than the current Argo `targetRevision`.
+
 Development
 -
 Install [uv](https://docs.astral.sh/uv/), then from the repository root:
