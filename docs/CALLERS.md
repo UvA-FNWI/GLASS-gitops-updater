@@ -36,7 +36,7 @@ Successful responses that used query `secret` include a `Deprecation` header and
 
 | Caller | Updater URL | Config `name` | Notes |
 |--------|-------------|---------------|-------|
-| [`.github/workflows/build.yml`](../.github/workflows/build.yml) | `api-v2-tst.datanose.nl` | `gitops-updater` | Pushes to ACR, then triggers DataNose GitOps via **query `secret`** until Bearer-capable image is live on tst |
+| [`.github/workflows/build.yml`](../.github/workflows/build.yml) | `api-v2-tst.datanose.nl` | `gitops-updater` | Pushes to ACR, then triggers DataNose GitOps with `Authorization: Bearer` |
 
 When adding a new caller, record it here: which **URL** it hits, the config `name`, and which GitOps repo must contain the handler entry.
 

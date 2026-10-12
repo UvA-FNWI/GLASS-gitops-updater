@@ -37,7 +37,7 @@ jobs:
         echo "::add-mask::${UPDATER_SECRET}"
         helm package --version "${VERSION}" --app-version "${VERSION}" charts/gitops-updater
         helm push "gitops-updater-${VERSION}.tgz" oci://${{ env.CR_NAME }}/helm
-        
-        # TODO: switch to Authorization Bearer after Bearer-capable image is live on tst (see PR 2 rollout).
+
         curl -fsS \
-          "https://api-v2-tst.datanose.nl/gitops-updater?name=gitops-updater&secret=${UPDATER_SECRET}&version=${VERSION}"
+          -H "Authorization: Bearer ${UPDATER_SECRET}" \
+          "https://api-v2-tst.datanose.nl/gitops-updater?name=gitops-updater&version=${VERSION}"
