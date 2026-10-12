@@ -32,13 +32,20 @@ The DataNose production and staging clusters both follow manifests from **one** 
 
 Successful responses that used query `secret` include a `Deprecation` header and a JSON `deprecation` field.
 
-## Known callers
+## Release rollouts
 
-| Caller | Updater URL | Config `name` | Notes |
-|--------|-------------|---------------|-------|
-| [`.github/workflows/build.yml`](../.github/workflows/build.yml) | `api-v2-tst.datanose.nl` | `gitops-updater` | Pushes to ACR, then triggers DataNose GitOps via **query `secret`** until Bearer-capable image is live on tst |
+[`.github/release-targets.yaml`](../.github/release-targets.yaml) is the list this repository publishes and rolls out. A push to `main` builds one version and pushes that image and chart to every registry in the file. It does not call an updater.
 
-When adding a new caller, record it here: which **URL** it hits, the config `name`, and which GitOps repo must contain the handler entry.
+Each `rollout` entry is a separate GitHub Environment (`datanose`, `k8s`). Add a required reviewer on both environments. Approving one does not start the other. The call uses `Authorization: Bearer` and the secret named on that entry (`UPDATER_SECRET_DN`, `UPDATER_SECRET_K8S`).
+
+| Rollout | Updater URL | Config `name` | Image registry |
+|---------|-------------|---------------|----------------|
+| `datanose` | `api-v2-tst.datanose.nl` | `gitops-updater` | `datanosecr.azurecr.io` |
+| `k8s` | `k8s.datanose.nl` | `gitops-updater` | `fnwicr.azurecr.io` |
+
+`k8s-gitops` still reads the Helm chart from `datanosecr.azurecr.io`. The workflow pushes the chart there as well as to `fnwicr`. Approve `k8s` only when that Application's image repository is `fnwicr.azurecr.io/gitops-updater` and `tag` is empty.
+
+When adding a cluster, add a registry only if it pulls from a new host, and add a rollout entry with its own environment and secret.
 
 ## Local / chart defaults
 

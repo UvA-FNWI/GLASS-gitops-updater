@@ -1,0 +1,24 @@
+# Image and chart are pushed to every registry before any rollout.
+# Each rollout waits on a GitHub Environment of the same name, with its own
+# required reviewer. The jobs do not depend on each other, so either can go first.
+#
+# k8s-gitops pulls the chart from datanosecr and the image from fnwicr.
+# Both hosts therefore receive the same version.
+
+registries:
+  - name: datanose
+    host: datanosecr.azurecr.io
+  - name: fnwi
+    host: fnwicr.azurecr.io
+
+rollout:
+  - name: datanose
+    registry: datanose
+    url: https://api-v2-tst.datanose.nl/gitops-updater
+    config: gitops-updater
+    secret: UPDATER_SECRET_DN
+  - name: k8s
+    registry: fnwi
+    url: https://k8s.datanose.nl/gitops-updater
+    config: gitops-updater
+    secret: UPDATER_SECRET_K8S
