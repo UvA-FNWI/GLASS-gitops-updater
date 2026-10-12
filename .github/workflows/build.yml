@@ -11,16 +11,25 @@ jobs:
   plan:
     runs-on: ubuntu-latest
     outputs:
-      registries: ${{ steps.targets.outputs.registries }}
       rollouts: ${{ steps.targets.outputs.rollouts }}
       hosts: ${{ steps.targets.outputs.hosts }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.9.0"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
       - name: Read release targets
         id: targets
-        run: python3 scripts/release_targets.py plan .github/release-targets.yaml
+        run: uv run --frozen --no-dev --group release python scripts/release_targets.py .github/release-targets.yaml
 
   publish:
     needs: plan

@@ -4,6 +4,8 @@
 #
 # datanosecr is the registry for the current clusters. Add another registries
 # entry when a new cluster pulls its image and chart from somewhere else.
+# Point that cluster's Helm image value at the new host. A rollout entry
+# only names the updater to call.
 
 registries:
   - name: datanose
@@ -11,12 +13,10 @@ registries:
 
 rollout:
   - name: datanose
-    registry: datanose
     url: https://api-v2-tst.datanose.nl/gitops-updater
     config: gitops-updater
     secret: UPDATER_SECRET_DN
   - name: k8s
-    registry: datanose
     url: https://k8s.datanose.nl/gitops-updater
     config: gitops-updater
     secret: UPDATER_SECRET_K8S
