@@ -2,14 +2,12 @@
 # Each rollout waits on a GitHub Environment of the same name, with its own
 # required reviewer. The jobs do not depend on each other, so either can go first.
 #
-# k8s-gitops pulls the chart from datanosecr and the image from fnwicr.
-# Both hosts therefore receive the same version.
+# datanosecr is the registry for the current clusters. Add another registries
+# entry when a new cluster pulls its image and chart from somewhere else.
 
 registries:
   - name: datanose
     host: datanosecr.azurecr.io
-  - name: fnwi
-    host: fnwicr.azurecr.io
 
 rollout:
   - name: datanose
@@ -18,7 +16,7 @@ rollout:
     config: gitops-updater
     secret: UPDATER_SECRET_DN
   - name: k8s
-    registry: fnwi
+    registry: datanose
     url: https://k8s.datanose.nl/gitops-updater
     config: gitops-updater
     secret: UPDATER_SECRET_K8S

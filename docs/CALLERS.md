@@ -36,16 +36,16 @@ Successful responses that used query `secret` include a `Deprecation` header and
 
 [`.github/release-targets.yaml`](../.github/release-targets.yaml) is the list this repository publishes and rolls out. A push to `main` builds one version and pushes that image and chart to every registry in the file. It does not call an updater.
 
-Each `rollout` entry is a separate GitHub Environment (`datanose`, `k8s`). Add a required reviewer on both environments. Approving one does not start the other. The call uses `Authorization: Bearer` and the secret named on that entry (`UPDATER_SECRET_DN`, `UPDATER_SECRET_K8S`).
+Each `rollout` entry is a separate GitHub Environment (`datanose`, `k8s`). Add a required reviewer on both environments. Approving one does not start the other. This branch still sends the secret as a query parameter, because the pod that is serving does not accept Bearer yet. The follow-up branch switches both calls to `Authorization: Bearer` after that image is live. Secrets are `UPDATER_SECRET_DN` and `UPDATER_SECRET_K8S`.
 
 | Rollout | Updater URL | Config `name` | Image registry |
 |---------|-------------|---------------|----------------|
 | `datanose` | `api-v2-tst.datanose.nl` | `gitops-updater` | `datanosecr.azurecr.io` |
-| `k8s` | `k8s.datanose.nl` | `gitops-updater` | `fnwicr.azurecr.io` |
+| `k8s` | `k8s.datanose.nl` | `gitops-updater` | `datanosecr.azurecr.io` |
 
-`k8s-gitops` still reads the Helm chart from `datanosecr.azurecr.io`. The workflow pushes the chart there as well as to `fnwicr`. Approve `k8s` only when that Application's image repository is `fnwicr.azurecr.io/gitops-updater` and `tag` is empty.
+Both current clusters use `datanosecr`. Add another `registries` entry only when a new cluster pulls its image and chart from a different host.
 
-When adding a cluster, add a registry only if it pulls from a new host, and add a rollout entry with its own environment and secret.
+When adding a cluster, add a rollout entry with its own environment and secret.
 
 ## Local / chart defaults
 

@@ -70,6 +70,6 @@ jobs:
             exit 1
           fi
           echo "::add-mask::${UPDATER_SECRET}"
+          # Bearer replaces the query secret once the image from this branch is serving.
           curl -fsS \
-            -H "Authorization: Bearer ${UPDATER_SECRET}" \
-            "${{ matrix.target.url }}?name=${{ matrix.target.config }}&version=${VERSION}"
+            "${{ matrix.target.url }}?name=${{ matrix.target.config }}&secret=${UPDATER_SECRET}&version=${VERSION}"

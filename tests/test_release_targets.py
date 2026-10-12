@@ -12,14 +12,11 @@ def test_release_targets_list_both_rollouts_independently():
     registries = {row["name"]: row["host"] for row in parsed["registries"]}
     rollouts = {row["name"]: row for row in parsed["rollout"]}
 
-    assert registries == {
-        "datanose": "datanosecr.azurecr.io",
-        "fnwi": "fnwicr.azurecr.io",
-    }
+    assert registries == {"datanose": "datanosecr.azurecr.io"}
     assert set(rollouts) == {"datanose", "k8s"}
     assert rollouts["datanose"]["registry"] == "datanose"
     assert rollouts["datanose"]["secret"] == "UPDATER_SECRET_DN"
-    assert rollouts["k8s"]["registry"] == "fnwi"
+    assert rollouts["k8s"]["registry"] == "datanose"
     assert rollouts["k8s"]["url"] == "https://k8s.datanose.nl/gitops-updater"
     assert rollouts["k8s"]["secret"] == "UPDATER_SECRET_K8S"
 
