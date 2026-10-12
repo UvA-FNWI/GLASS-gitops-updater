@@ -63,7 +63,7 @@ The query parameter `secret` is deprecated (response includes `Deprecation` and 
 HTTP status codes: **401** for missing or invalid authentication; **409** when a downgrade is blocked; **422** for other client or processing errors. Successful updates use **200**.
 
 To allow lowering `targetRevision`, set `allowDowngrade: true` on a config entry (Helm `config[].allowDowngrade`) or pass `allowDowngrade=true` on the request query string.
-The repository deploy workflow (`.github/workflows/build.yml`) will switch to Bearer after the updated image is running in tst.
+The repository deploy workflow (`.github/workflows/build.yml`) calls each rollout with `Authorization: Bearer`.
 The `argocd`-handler will validate if the secret matches the secret provided in the configuration. After that
 it will retrieve the file `directory/manifest.yaml` and expect a file that looks a bit like this:
 ```yaml
@@ -102,7 +102,7 @@ Only when the requested version (`1.0.1`) is higher than the current one, it wil
 
 Releases
 -
-The FNWI release line is **`1.0.*`**. `Chart.yaml` and `pyproject.toml` use **`1.0.0`** as the development baseline; CI on `main` publishes the image as **`1.0.YYYYMMDDHHMMSS`** and a Helm chart with the same version and `appVersion` to OCI, then bumps the DataNose GitOps `targetRevision` via the updater API. The Deployment image tag is that `appVersion` unless `tag` is set, so a new release changes the pod spec and Kubernetes recreates the pod. Older **`0.5.*`** chart versions in GitOps are the pre-FNWI line; the first deploy after this change must use a **`1.0.*`** chart version **semver-greater** than the current Argo `targetRevision`.
+The FNWI release line is **`1.0.*`**. `Chart.yaml` and `pyproject.toml` use **`1.0.0`** as the development baseline. CI on `main` publishes the image as **`1.0.YYYYMMDDHHMMSS`** and a Helm chart with the same version and `appVersion` to every registry in [`.github/release-targets.yaml`](.github/release-targets.yaml). Each rollout in that file waits for its own GitHub Environment approval and then calls that updater with `Authorization: Bearer`. Approving `datanose` does not roll out `k8s`, and the other way around. The Deployment image tag is that `appVersion` unless `tag` is set, so a new release changes the pod spec and Kubernetes recreates the pod. Older **`0.5.*`** chart versions in GitOps are the pre-FNWI line; the first deploy after this change must use a **`1.0.*`** chart version **semver-greater** than the current Argo `targetRevision`.
 
 Development
 -

@@ -7,37 +7,69 @@ on:
 permissions:
   contents: read
 
-env:
-  CR_NAME: datanosecr.azurecr.io
-
 jobs:
-  build:
-    runs-on: self-hosted
-
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      registries: ${{ steps.targets.outputs.registries }}
+      rollouts: ${{ steps.targets.outputs.rollouts }}
+      hosts: ${{ steps.targets.outputs.hosts }}
     steps:
-    - name: Checkout
-      uses: actions/checkout@v5
-      with:
-        fetch-depth: 0
+      - name: Checkout
+        uses: actions/checkout@v5
 
-    - name: Set release version
-      run: echo "VERSION=$(date '+1.0.%Y%m%d%H%M%S')" >> "$GITHUB_ENV"
+      - name: Read release targets
+        id: targets
+        run: python3 scripts/release_targets.py plan .github/release-targets.yaml
 
-    - name: Build container
-      run: |
-        set -euo pipefail
-        docker build -t "${{ env.CR_NAME }}/gitops-updater:${VERSION}" .
-        docker push "${{ env.CR_NAME }}/gitops-updater:${VERSION}"
+  publish:
+    needs: plan
+    runs-on: self-hosted
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
 
-    - name: Build chart and release
-      env:
-        UPDATER_SECRET: ${{ secrets.UPDATER_SECRET_DN }}
-      run: |
-        set -euo pipefail
-        echo "::add-mask::${UPDATER_SECRET}"
-        helm package --version "${VERSION}" --app-version "${VERSION}" charts/gitops-updater
-        helm push "gitops-updater-${VERSION}.tgz" oci://${{ env.CR_NAME }}/helm
+      - name: Set release version
+        id: version
+        run: echo "version=$(date '+1.0.%Y%m%d%H%M%S')" >> "$GITHUB_OUTPUT"
 
-        curl -fsS \
-          -H "Authorization: Bearer ${UPDATER_SECRET}" \
-          "https://api-v2-tst.datanose.nl/gitops-updater?name=gitops-updater&version=${VERSION}"
+      - name: Build image and chart, push to every registry
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          HOSTS: ${{ needs.plan.outputs.hosts }}
+        run: |
+          set -euo pipefail
+          docker build -t "gitops-updater:${VERSION}" .
+          helm package --version "${VERSION}" --app-version "${VERSION}" charts/gitops-updater
+          while IFS= read -r host; do
+            [ -n "${host}" ] || continue
+            docker tag "gitops-updater:${VERSION}" "${host}/gitops-updater:${VERSION}"
+            docker push "${host}/gitops-updater:${VERSION}"
+            helm push "gitops-updater-${VERSION}.tgz" "oci://${host}/helm"
+          done <<< "${HOSTS}"
+
+  rollout:
+    needs: [plan, publish]
+    runs-on: self-hosted
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJson(needs.plan.outputs.rollouts) }}
+    environment: ${{ matrix.target.name }}
+    steps:
+      - name: Roll out ${{ matrix.target.name }}
+        env:
+          UPDATER_SECRET: ${{ secrets[matrix.target.secret] }}
+          VERSION: ${{ needs.publish.outputs.version }}
+        run: |
+          set -euo pipefail
+          if [ -z "${UPDATER_SECRET}" ]; then
+            echo "missing GitHub secret ${{ matrix.target.secret }}" >&2
+            exit 1
+          fi
+          echo "::add-mask::${UPDATER_SECRET}"
+          curl -fsS \
+            -H "Authorization: Bearer ${UPDATER_SECRET}" \
+            "${{ matrix.target.url }}?name=${{ matrix.target.config }}&version=${VERSION}"
