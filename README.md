@@ -1,9 +1,8 @@
-FNWI GitOps updater
+gitops-updater
 =
 
-The **gitops-updater** (this repository) provides an HTTP API for updating YAML files stored in a git repository.
-It is maintained for FNWI deployments; behaviour matches the earlier GLASS-gitops-updater design.
-Known production callers and hostnames are listed in [docs/CALLERS.md](docs/CALLERS.md).
+The **gitops-updater** provides an HTTP API for updating YAML files stored in a git repository.
+Deployments keep their own hostnames and Git repositories outside this tree. See [docs/CALLERS.md](docs/CALLERS.md).
 You can use this when you're using gitops software on your Kubernetes cluster like Argo CD or Flux.
 It's compatible with both GitHub and GitLab and can also do some tricks when you want to deploy review apps.
 Besides that, the provider Helm chart also helps you out when you want to store the needed tokens within an
@@ -11,7 +10,7 @@ Azure Key Vault.
 
 Overview
 -
-Idea is simple: you provide configuration when you deploy the `GLASS-gitops-updater`, probably using the Helm values.
+Idea is simple: you provide configuration when you deploy the `gitops-updater`, probably using the Helm values.
 You can provide multiple configuration lines which are identified by a unique name.
 Next to a name, every configuration line has a handler, a provider and some additional config (like a secret and path).
 The chosen handler will determine the behaviour of your call.
@@ -63,7 +62,7 @@ The query parameter `secret` is deprecated (response includes `Deprecation` and 
 HTTP status codes: **401** for missing or invalid authentication; **409** when a downgrade is blocked; **422** for other client or processing errors. Successful updates use **200**.
 
 To allow lowering `targetRevision`, set `allowDowngrade: true` on a config entry (Helm `config[].allowDowngrade`) or pass `allowDowngrade=true` on the request query string.
-The repository deploy workflow (`.github/workflows/build.yml`) will switch to Bearer after the updated image is running in tst.
+The repository deploy workflow (`.github/workflows/build.yml`) will switch to Bearer after an image that accepts it is serving.
 The `argocd`-handler will validate if the secret matches the secret provided in the configuration. After that
 it will retrieve the file `directory/manifest.yaml` and expect a file that looks a bit like this:
 ```yaml
