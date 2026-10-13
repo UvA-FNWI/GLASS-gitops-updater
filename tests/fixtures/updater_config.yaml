@@ -1,0 +1,13 @@
+config:
+  - name: test-app
+    path: apps/example.yaml
+    secretPath: /secrets/updater
+    handler: argocd
+    provider: test-github
+
+providers:
+  - name: test-github
+    type: GitHub
+    repository: example/repo
+    branch: main
+    tokenPath: /secrets/github

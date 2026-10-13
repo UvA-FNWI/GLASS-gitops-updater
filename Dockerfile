@@ -16,7 +16,13 @@ RUN uv sync --frozen --no-dev --no-install-project
 
 COPY gitops_updater /app/gitops_updater
 COPY main.py /app/main.py
+COPY gunicorn_conf.py /app/gunicorn_conf.py
 
-EXPOSE 80
+RUN adduser -u 1001 -D gitops-updater \
+    && chown -R gitops-updater:gitops-updater /app
 
-CMD ["gunicorn", "--bind", "0.0.0.0:80", "gitops_updater.main:app"]
+USER gitops-updater
+
+EXPOSE 8080
+
+CMD ["gunicorn", "--conf", "/app/gunicorn_conf.py", "--bind", "0.0.0.0:8080", "gitops_updater.main:app", "--logger-class", "gitops_updater.logger.CustomGunicornLogger"]

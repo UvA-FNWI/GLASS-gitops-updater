@@ -1,7 +1,9 @@
-GLASS-gitops-updater
+FNWI GitOps updater
 =
 
-The `GLASS-gitops-updater` provides an HTTP API for updating YAML files stored in a git-repository.
+The **gitops-updater** (this repository) provides an HTTP API for updating YAML files stored in a git repository.
+It is maintained for FNWI deployments; behaviour matches the earlier GLASS-gitops-updater design.
+Known production callers and hostnames are listed in [docs/CALLERS.md](docs/CALLERS.md).
 You can use this when you're using gitops software on your Kubernetes cluster like Argo CD or Flux.
 It's compatible with both GitHub and GitLab and can also do some tricks when you want to deploy review apps.
 Besides that, the provider Helm chart also helps you out when you want to store the needed tokens within an
@@ -28,7 +30,7 @@ When configuring a GitHub provider, the configuration will look similar to the e
 a GitHub Personal Access Token (PAT) on the relevant settings page: https://github.com/settings/tokens
 
 Make sure you grant sufficient permissions (`repo`) and make sure the PAT is available to the Docker container running
-the `GLASS-gitops-updater` as a mounted file. You can achieve this by mounting a secret,
+the gitops-updater as a mounted file. You can achieve this by mounting a secret,
 possibly using the Azure Key Vault.
 ```yaml
 providers:
@@ -52,8 +54,12 @@ config:
 ```
 Given this configuration, the GET-call that should be executed looks like this:
 ```sh
-curl -s https://your-domain.com/gitops-updater?name=example-name&version=1.0.1&secret=very-secret
+curl -fsS \
+  -H "Authorization: Bearer <updater-secret>" \
+  "https://your-domain.com/gitops-updater?name=example-name&version=1.0.1"
 ```
+The query parameter `secret` is deprecated and will be removed; use the `Authorization: Bearer` header instead.
+The repository deploy workflow (`.github/workflows/build.yml`) will switch to Bearer after the updated image is running in tst.
 The `argocd`-handler will validate if the secret matches the secret provided in the configuration. After that
 it will retrieve the file `directory/manifest.yaml` and expect a file that looks a bit like this:
 ```yaml

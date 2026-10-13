@@ -21,8 +21,18 @@ spec:
         - name: gitops-updater
           image: "{{ .Values.image }}:{{ .Values.tag }}"
           imagePullPolicy: Always
+          securityContext:
+            privileged: false
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 1001
+            runAsGroup: 1001
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
           ports:
-            - containerPort: 80
+            - containerPort: 8080
           env:
             - name: GITOPS_UPDATER_VERSION
               value: "{{ .Chart.AppVersion }}"
@@ -40,6 +50,8 @@ spec:
           volumeMounts:
             - name: config-volume
               mountPath: /mnt/config
+            - name: tmp
+              mountPath: /tmp
           {{- if .Values.azure }}
             - name: secrets-store-inline
               mountPath: {{ .Values.azure.mountPath }}
@@ -50,6 +62,9 @@ spec:
         - name: config-volume
           configMap:
             name: gitops-updater-configmap
+        - name: tmp
+          emptyDir:
+            sizeLimit: 50Mi
       {{- if .Values.azure }}
         - name: secrets-store-inline
           csi:

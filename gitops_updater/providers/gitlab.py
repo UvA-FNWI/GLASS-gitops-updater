@@ -1,9 +1,8 @@
-import os
-
+from gitlab import Gitlab, GitlabGetError
 from gitlab.v4.objects import ProjectFile
 
-from gitops_updater.providers.gitprovider import GitProvider, GitFile
-from gitlab import Gitlab, GitlabGetError
+from gitops_updater.providers.gitprovider import GitFile, GitProvider
+from gitops_updater.utils import get_secret
 
 
 class GitLabFile(GitFile):
@@ -16,7 +15,7 @@ class GitLabFile(GitFile):
 
 class GitLabProvider(GitProvider):
     def __init__(self, url: str, token_path: str, branch: str, project: str):
-        gitlab_token = os.environ[token_path]
+        gitlab_token = get_secret(token_path)
 
         self.client = Gitlab(url, private_token=gitlab_token)
         self.project = self.client.projects.get(project)
