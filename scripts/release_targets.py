@@ -1,52 +1,39 @@
-"""Read .github/release-targets.yaml for the publish workflow."""
+"""Validate publish hosts and rollout environments for the publish workflow."""
 
-import argparse
 import json
 import os
+import re
 import sys
-from pathlib import Path
 
-from jsonschema import Draft202012Validator
-from ruamel.yaml import YAML
-
-
-def parse_release_targets(path: Path) -> dict:
-    document = YAML().load(path)
-    _validate_schema(document, path.with_suffix(".schema.json"))
-    registries = [_strings(row) for row in document["registries"]]
-    rollouts = [_strings(row) for row in document["rollout"]]
-    _validate_names(registries, rollouts)
-    return {"registries": registries, "rollout": rollouts}
+_HOST = re.compile(r"^[A-Za-z0-9.-]+$")
+_ENVIRONMENT = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,254}$")
 
 
-def _validate_schema(instance: object, schema_path: Path) -> None:
-    schema = json.loads(schema_path.read_text(encoding="utf-8"))
-    validator = Draft202012Validator(schema)
-    errors = sorted(
-        validator.iter_errors(instance), key=lambda error: list(error.absolute_path)
-    )
-    if not errors:
-        return
-    error = errors[0]
-    location = "/".join(str(part) for part in error.absolute_path)
-    prefix = f"{location}: " if location else ""
-    raise ValueError(f"{prefix}{error.message}") from error
+def parse_entries(value: str) -> list[str]:
+    return [part for part in re.split(r"[\s,]+", value.strip()) if part]
 
 
-def _strings(row: dict) -> dict[str, str]:
-    return {str(key): str(value) for key, value in row.items()}
+def parse_release_targets(hosts: str, environments: str) -> dict[str, list[str]]:
+    host_list = parse_entries(hosts)
+    environment_list = parse_entries(environments)
+    if not host_list:
+        raise ValueError("RELEASE_HOSTS must list at least one host")
+    if not environment_list:
+        raise ValueError("ROLLOUT_ENVIRONMENTS must list at least one environment")
 
+    for host in host_list:
+        if _HOST.fullmatch(host) is None:
+            raise ValueError(f"host: {host!r} is not a registry host")
+    for name in environment_list:
+        if _ENVIRONMENT.fullmatch(name) is None:
+            raise ValueError(f"environment: {name!r} is not a GitHub Environment name")
 
-def _validate_names(
-    registries: list[dict[str, str]], rollouts: list[dict[str, str]]
-) -> None:
-    registry_names = [row["name"] for row in registries]
-    if len(registry_names) != len(set(registry_names)):
-        raise ValueError("registry names must be unique")
+    if len(host_list) != len(set(host_list)):
+        raise ValueError("hosts must be unique")
+    if len(environment_list) != len(set(environment_list)):
+        raise ValueError("rollout environments must be unique")
 
-    rollout_names = [row["name"] for row in rollouts]
-    if len(rollout_names) != len(set(rollout_names)):
-        raise ValueError("rollout names must be unique")
+    return {"hosts": host_list, "rollouts": environment_list}
 
 
 def write_github_output(name: str, value: str) -> None:
@@ -58,22 +45,26 @@ def write_github_output(name: str, value: str) -> None:
         handle.write(f"{name}<<{marker}\n{value}\n{marker}\n")
 
 
-def plan(path: Path) -> dict[str, str]:
-    parsed = parse_release_targets(path)
+def plan(hosts: str, environments: str) -> dict[str, str]:
+    parsed = parse_release_targets(hosts, environments)
     payload = {
-        "rollouts": json.dumps(parsed["rollout"], separators=(",", ":")),
-        "hosts": "\n".join(row["host"] for row in parsed["registries"]),
+        "rollouts": json.dumps(parsed["rollouts"], separators=(",", ":")),
+        "hosts": "\n".join(parsed["hosts"]),
     }
     for name, value in payload.items():
         write_github_output(name, value)
     return payload
 
 
-def main(argv: list[str] | None = None) -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("targets", type=Path, help="path to release-targets.yaml")
-    args = parser.parse_args(argv)
-    payload = plan(args.targets)
+def main() -> None:
+    try:
+        payload = plan(
+            os.environ.get("RELEASE_HOSTS", ""),
+            os.environ.get("ROLLOUT_ENVIRONMENTS", ""),
+        )
+    except ValueError as error:
+        print(error, file=sys.stderr)
+        raise SystemExit(1) from error
     if not os.environ.get("GITHUB_OUTPUT"):
         json.dump(payload, sys.stdout)
         sys.stdout.write("\n")

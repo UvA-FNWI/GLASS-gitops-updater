@@ -34,18 +34,16 @@ Successful responses that used query `secret` include a `Deprecation` header and
 
 ## Release rollouts
 
-[`.github/release-targets.yaml`](../.github/release-targets.yaml) is the list this repository publishes and rolls out. A push to `main` builds one version and pushes that image and chart to every registry in the file. It does not call an updater.
+Publish settings live in GitHub, not in this repository. See [Releases](../README.md#releases). A push to `main` builds one version and pushes that image and chart to every host in the `RELEASE_HOSTS` repository variable. It does not call an updater until an environment is approved.
 
-Each `rollout` entry is a separate GitHub Environment (`datanose`, `k8s`). Add a required reviewer on both environments. Approving one does not start the other. This branch still sends the secret as a query parameter, because the pod that is serving does not accept Bearer yet. The follow-up branch switches both calls to `Authorization: Bearer` after that image is live. Secrets are `UPDATER_SECRET_DN` and `UPDATER_SECRET_K8S`.
+`ROLLOUT_ENVIRONMENTS` lists the GitHub Environments. Each one has `UPDATER_URL`, `UPDATER_CONFIG`, and `UPDATER_SECRET_NAME`. Approving one does not start the other. This branch still sends the secret as a query parameter, because the pod that is serving does not accept Bearer yet. The follow-up branch switches both calls to `Authorization: Bearer` after that image is live.
 
-| Rollout | Updater URL | Config `name` | Image registry |
-|---------|-------------|---------------|----------------|
-| `datanose` | `api-v2-tst.datanose.nl` | `gitops-updater` | `datanosecr.azurecr.io` |
-| `k8s` | `k8s.datanose.nl` | `gitops-updater` | `datanosecr.azurecr.io` |
+| Environment | Updater URL | Config `name` | `UPDATER_SECRET_NAME` | Image registry |
+|-------------|-------------|---------------|-----------------------|----------------|
+| `datanose` | `https://api-v2-tst.datanose.nl/gitops-updater` | `gitops-updater` | `UPDATER_SECRET_DN` | `datanosecr.azurecr.io` |
+| `k8s` | `https://k8s.datanose.nl/gitops-updater` | `gitops-updater` | `UPDATER_SECRET_K8S` | `datanosecr.azurecr.io` |
 
-Both current clusters use `datanosecr`. Add another `registries` entry only when a new cluster pulls its image and chart from a different host.
-
-When adding a cluster, add a rollout entry with its own environment and secret.
+Both current clusters use `datanosecr`. Add another line to `RELEASE_HOSTS` only when a new cluster pulls its image and chart from a different host. Add a cluster by creating its environment and appending that name to `ROLLOUT_ENVIRONMENTS`.
 
 ## Local / chart defaults
 
