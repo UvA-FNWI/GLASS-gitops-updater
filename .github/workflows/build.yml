@@ -84,6 +84,6 @@ jobs:
             exit 1
           fi
           echo "::add-mask::${UPDATER_SECRET}"
-          # Bearer replaces the query secret once the image from this branch is serving.
           curl -fsS \
-            "${UPDATER_URL}?name=${UPDATER_CONFIG}&secret=${UPDATER_SECRET}&version=${VERSION}"
+            -H "Authorization: Bearer ${UPDATER_SECRET}" \
+            "${UPDATER_URL}?name=${UPDATER_CONFIG}&version=${VERSION}"

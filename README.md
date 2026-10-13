@@ -62,7 +62,7 @@ The query parameter `secret` is deprecated (response includes `Deprecation` and 
 HTTP status codes: **401** for missing or invalid authentication; **409** when a downgrade is blocked; **422** for other client or processing errors. Successful updates use **200**.
 
 To allow lowering `targetRevision`, set `allowDowngrade: true` on a config entry (Helm `config[].allowDowngrade`) or pass `allowDowngrade=true` on the request query string.
-The repository deploy workflow (`.github/workflows/build.yml`) will switch to Bearer after an image that accepts it is serving.
+The repository deploy workflow (`.github/workflows/build.yml`) calls each rollout with `Authorization: Bearer`.
 The `argocd`-handler will validate if the secret matches the secret provided in the configuration. After that
 it will retrieve the file `directory/manifest.yaml` and expect a file that looks a bit like this:
 ```yaml
@@ -119,7 +119,7 @@ Each name in `ROLLOUT_ENVIRONMENTS` is an environment with a required reviewer a
 | Variable | `UPDATER_SECRET_NAME` | Name of the organization secret that holds the updater secret. |
 | Secret | the name in `UPDATER_SECRET_NAME` | Organization secret, shared with this repository and limited to that environment. |
 
-This branch still passes the updater secret as a query parameter. The Deployment image tag is that `appVersion` unless `tag` is set, so a new release changes the pod spec and Kubernetes recreates the pod. Older **`0.5.*`** chart versions stay on that line until a deploy moves `targetRevision` to a **`1.0.*`** version that is semver-greater.
+The Deployment image tag is that `appVersion` unless `tag` is set, so a new release changes the pod spec and Kubernetes recreates the pod. Older **`0.5.*`** chart versions stay on that line until a deploy moves `targetRevision` to a **`1.0.*`** version that is semver-greater.
 
 Development
 -
