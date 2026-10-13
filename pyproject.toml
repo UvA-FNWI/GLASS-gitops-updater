@@ -1,0 +1,26 @@
+[project]
+name = "gitops-updater"
+version = "0.3.0"
+description = "HTTP API for updating YAML files in a Git repository for GitOps workflows"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "flask",
+    "gunicorn",
+    "pygithub",
+    "python-gitlab",
+    "ruamel.yaml",
+    "semver",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "ruff",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+
+[tool.uv]
+package = false

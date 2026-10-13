@@ -89,3 +89,40 @@ spec:
 Please note that the value of `metadata.name` should match the name of the configuration line. When the secret
 matches, the file exists and the name matches, it will retrieve the current version (`1.0.0`) and to a semver-comparison.
 Only when the requested version (`1.0.1`) is higher than the current one, it will perform a commit where it updates the version.
+
+Development
+-
+Install [uv](https://docs.astral.sh/uv/), then from the repository root:
+
+```sh
+uv sync
+uv run python -c "import gitops_updater.main"
+```
+
+To refresh the lockfile after changing dependencies in `pyproject.toml`:
+
+```sh
+uv lock
+```
+
+Build the container image:
+
+```sh
+docker build -t gitops-updater:local .
+```
+
+Run the same checks as PR CI (no cluster or remote GitOps repo required):
+
+```sh
+uv sync --frozen --all-groups
+uv run ruff check .
+uv run ruff format --check .
+uv run pytest -v
+```
+
+Optional: run the app locally (handlers still need a real config file and Git credentials to update repos):
+
+```sh
+export CONFIG_PATH=/path/to/config.yaml
+uv run flask --app gitops_updater.main run --port 8080
+```

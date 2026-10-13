@@ -1,18 +1,22 @@
-FROM tiangolo/uwsgi-nginx-flask:python3.8-alpine
+FROM python:3.14-alpine
 
-ENV NGINX_WORKER_PROCESSES 1
-ENV UWSGI_CHEAPER 0
-ENV UWSGI_PROCESSES 1
+RUN apk update && apk upgrade \
+    && apk add --no-cache gcc musl-dev libffi-dev make
 
-RUN apk add gcc musl-dev libffi-dev make
-RUN pip install --upgrade pip
-RUN pip install pipenv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 WORKDIR /app
 
-COPY ./Pipfile .
-COPY ./Pipfile.lock .
-RUN pipenv requirements > requirements.txt
-RUN pip install -r requirements.txt
+ENV UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    PATH="/app/.venv/bin:$PATH"
+
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-dev --no-install-project
+
 COPY gitops_updater /app/gitops_updater
 COPY main.py /app/main.py
+
+EXPOSE 80
+
+CMD ["gunicorn", "--bind", "0.0.0.0:80", "gitops_updater.main:app"]

@@ -13,7 +13,7 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
 
@@ -26,7 +26,8 @@ jobs:
       env:
         UPDATER_SECRET: ${{ secrets.UPDATER_SECRET_DN }}
       run: |
-        set -euxo pipefail
+        set -euo pipefail
+        echo "::add-mask::${UPDATER_SECRET}"
         export VERSION=$(date "+0.5.%Y%m%d%H%M%S")
         helm package --version "${VERSION}" --app-version "${VERSION}" charts/gitops-updater
         helm push "gitops-updater-${VERSION}.tgz" oci://${{ env.CR_NAME }}/helm
