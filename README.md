@@ -2,7 +2,7 @@ gitops-updater
 =
 
 The **gitops-updater** provides an HTTP API for updating YAML files stored in a git repository.
-Deployments keep their own hostnames and Git repositories outside this tree. See [docs/CALLERS.md](docs/CALLERS.md).
+Deployments keep their own hostnames and Git repositories outside this tree. See [Releases](#releases).
 You can use this when you're using gitops software on your Kubernetes cluster like Argo CD or Flux.
 It's compatible with both GitHub and GitLab and can also do some tricks when you want to deploy review apps.
 Besides that, the provider Helm chart also helps you out when you want to store the needed tokens within an
