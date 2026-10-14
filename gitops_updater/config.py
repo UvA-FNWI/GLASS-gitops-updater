@@ -3,6 +3,7 @@ from dataclasses import dataclass
 
 from ruamel.yaml import YAML
 
+from gitops_updater.exceptions import UnknownConfigError, UnknownProviderError
 from gitops_updater.providers.github import GitHubProvider
 from gitops_updater.providers.gitlab import GitLabProvider
 from gitops_updater.utils import get_secret
@@ -17,6 +18,7 @@ class ConfigEntry:
     provider: str
     mapping: str
     paths: list[str]
+    allow_downgrade: bool = False
 
     def valid_secret(self, secret: str) -> bool:
         expected = self.secret().strip().encode("utf-8")
@@ -42,9 +44,10 @@ class ConfigReader:
                         row["provider"],
                         row.get("mapping", None),
                         row.get("paths", None),
+                        bool(row.get("allowDowngrade", False)),
                     )
 
-        raise Exception("Couldn't read config")
+        raise UnknownConfigError(f'Unknown configuration name "{name}"')
 
     def find_provider(self, filename: str, name: str):
         yaml = YAML()
@@ -60,4 +63,4 @@ class ConfigReader:
                         row["url"], row["tokenPath"], row["branch"], row["project"]
                     )
 
-        raise Exception("Couldn't read config")
+        raise UnknownProviderError(f'Unknown provider "{name}"')

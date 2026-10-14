@@ -3,17 +3,34 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import UTC, date, datetime, time
+from email.utils import format_datetime
 from enum import Enum
 
 from flask import Request
 
-# Mandatory Bearer-only on new clusters; query ?secret= removed after this date.
+# Mandatory Bearer-only on new clusters; query ?secret= removed after this date (ISO).
 QUERY_SECRET_SUNSET_DATE = "2027-01-07"
+
+QUERY_SECRET_SUNSET_AT = datetime.combine(
+    date.fromisoformat(QUERY_SECRET_SUNSET_DATE),
+    time(23, 59, 59),
+    tzinfo=UTC,
+)
+QUERY_SECRET_SUNSET_HTTPDATE = format_datetime(QUERY_SECRET_SUNSET_AT, usegmt=True)
 
 DEPRECATION_MESSAGE = (
     "Query parameter secret is deprecated; use Authorization: Bearer <secret>. "
     f"Removal planned on {QUERY_SECRET_SUNSET_DATE}."
 )
+
+
+def deprecation_headers() -> dict[str, str]:
+    """RFC 8594-style headers when query ?secret= is used."""
+    return {
+        "Deprecation": "true",
+        "Sunset": QUERY_SECRET_SUNSET_HTTPDATE,
+    }
 
 
 class AuthMethod(str, Enum):

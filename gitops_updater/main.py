@@ -7,11 +7,13 @@ from flask import Flask, json, request
 from gitops_updater.auth import (
     DEPRECATION_MESSAGE,
     AuthMethod,
+    deprecation_headers,
     resolve_updater_secret,
 )
 from gitops_updater.config import ConfigReader
 from gitops_updater.errors import public_error_message
 from gitops_updater.handlers.argocd import ArgoCD
+from gitops_updater.handlers.result import HandlerResult
 from gitops_updater.handlers.template import Template
 
 app = Flask(__name__)
@@ -31,8 +33,23 @@ def __with_deprecation(payload: dict, auth_method: AuthMethod):
     if auth_method != AuthMethod.QUERY:
         return payload, None
     body = {**payload, "deprecation": DEPRECATION_MESSAGE}
-    headers = {"Deprecation": "true"}
-    return body, headers
+    return body, deprecation_headers()
+
+
+def __parse_allow_downgrade() -> bool:
+    value = request.args.get("allowDowngrade")
+    if value is None:
+        return False
+    return value.strip().lower() in ("1", "true", "yes")
+
+
+def __respond_handler(response: HandlerResult | dict, auth_method: AuthMethod):
+    if isinstance(response, HandlerResult):
+        status, payload = response.status, response.body
+    else:
+        status, payload = 200, response
+    body, headers = __with_deprecation(payload, auth_method)
+    return __json_response(status, body, headers)
 
 
 @app.get("/healthz")
@@ -64,7 +81,7 @@ def handle():
     resolved = resolve_updater_secret(request)
     if resolved is None:
         return __json_response(
-            422,
+            401,
             {
                 "error": (
                     "Missing authentication; send Authorization: Bearer <secret> "
@@ -76,7 +93,7 @@ def handle():
     try:
         config = ConfigReader().find(os.environ["CONFIG_PATH"], name)
         if not config.valid_secret(resolved.secret):
-            return __json_response(422, {"error": "Invalid secret"})
+            return __json_response(401, {"error": "Invalid secret"})
 
         provider = ConfigReader().find_provider(
             os.environ["CONFIG_PATH"], config.provider
@@ -95,14 +112,13 @@ def handle():
             else:
                 response = handler.handle(id_, version, request.args.get("target"))
 
-            body, headers = __with_deprecation(response, resolved.method)
-            return __json_response(200, body, headers)
+            return __respond_handler(response, resolved.method)
 
         if config.handler == "argocd":
             handler = ArgoCD(config, provider)
-            response = handler.handle(version)
-            body, headers = __with_deprecation(response, resolved.method)
-            return __json_response(200, body, headers)
+            allow_downgrade = config.allow_downgrade or __parse_allow_downgrade()
+            response = handler.handle(version, allow_downgrade=allow_downgrade)
+            return __respond_handler(response, resolved.method)
     except Exception as e:
         return __json_response(422, {"error": public_error_message(e)})
 
@@ -140,7 +156,7 @@ def github_webhook():
         )
         if not hmac.compare_digest(incoming, expected):
             return __json_response(
-                422, {"error": "Invalid secret in X-Hub-Signature-256 header"}
+                401, {"error": "Invalid secret in X-Hub-Signature-256 header"}
             )
 
         provider = ConfigReader().find_provider(

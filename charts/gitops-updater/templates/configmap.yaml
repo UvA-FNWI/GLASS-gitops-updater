@@ -12,6 +12,9 @@ data:
       secretPath: {{ .secretPath }}
       handler: {{ .handler }}
       provider: {{ .provider }}
+  {{- if .allowDowngrade }}
+      allowDowngrade: true
+  {{- end }}
   {{- if .mapping}}
       mapping: {{.mapping}}
   {{- end}}
