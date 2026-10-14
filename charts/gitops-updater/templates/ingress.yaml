@@ -6,13 +6,17 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: "{{ .Values.ingressClass }}"
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    {{- if .Values.clusterIssuer }}
     cert-manager.io/cluster-issuer: "{{ .Values.clusterIssuer }}"
     acme.cert-manager.io/http01-ingress-class: {{ .Values.ingressClass }}
+    {{- end }}
 spec:
+  {{- if .Values.clusterIssuer }}
   tls:
     - hosts:
         - "{{ .Values.hostname }}"
       secretName: gitops-updater-cert
+  {{- end }}
   rules:
     - host: "{{ .Values.hostname }}"
       http:

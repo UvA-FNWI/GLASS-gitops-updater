@@ -1,9 +1,8 @@
-FNWI GitOps updater
+gitops-updater
 =
 
-The **gitops-updater** (this repository) provides an HTTP API for updating YAML files stored in a git repository.
-It is maintained for FNWI deployments; behaviour matches the earlier GLASS-gitops-updater design.
-Known production callers and hostnames are listed in [docs/CALLERS.md](docs/CALLERS.md).
+The **gitops-updater** provides an HTTP API for updating YAML files stored in a git repository.
+Deployments keep their own hostnames and Git repositories outside this tree. See [Releases](#releases).
 You can use this when you're using gitops software on your Kubernetes cluster like Argo CD or Flux.
 It's compatible with both GitHub and GitLab and can also do some tricks when you want to deploy review apps.
 Besides that, the provider Helm chart also helps you out when you want to store the needed tokens within an
@@ -11,7 +10,7 @@ Azure Key Vault.
 
 Overview
 -
-Idea is simple: you provide configuration when you deploy the `GLASS-gitops-updater`, probably using the Helm values.
+Idea is simple: you provide configuration when you deploy the `gitops-updater`, probably using the Helm values.
 You can provide multiple configuration lines which are identified by a unique name.
 Next to a name, every configuration line has a handler, a provider and some additional config (like a secret and path).
 The chosen handler will determine the behaviour of your call.
@@ -63,7 +62,7 @@ The query parameter `secret` is deprecated (response includes `Deprecation` and 
 HTTP status codes: **401** for missing or invalid authentication; **409** when a downgrade is blocked; **422** for other client or processing errors. Successful updates use **200**.
 
 To allow lowering `targetRevision`, set `allowDowngrade: true` on a config entry (Helm `config[].allowDowngrade`) or pass `allowDowngrade=true` on the request query string.
-The repository deploy workflow (`.github/workflows/build.yml`) will switch to Bearer after the updated image is running in tst.
+The repository deploy workflow (`.github/workflows/build.yml`) will switch to Bearer after an image that accepts it is serving.
 The `argocd`-handler will validate if the secret matches the secret provided in the configuration. After that
 it will retrieve the file `directory/manifest.yaml` and expect a file that looks a bit like this:
 ```yaml
@@ -102,7 +101,25 @@ Only when the requested version (`1.0.1`) is higher than the current one, it wil
 
 Releases
 -
-The FNWI release line is **`1.0.*`**. `Chart.yaml` and `pyproject.toml` use **`1.0.0`** as the development baseline. CI on `main` publishes the image as **`1.0.YYYYMMDDHHMMSS`** and a Helm chart with the same version and `appVersion` to every registry in [`.github/release-targets.yaml`](.github/release-targets.yaml). Each rollout in that file waits for its own GitHub Environment approval and then calls that updater. Approving `datanose` does not roll out `k8s`, and the other way around. This branch still passes the updater secret as a query parameter. The Deployment image tag is that `appVersion` unless `tag` is set, so a new release changes the pod spec and Kubernetes recreates the pod. Older **`0.5.*`** chart versions in GitOps are the pre-FNWI line; the first deploy after this change must use a **`1.0.*`** chart version **semver-greater** than the current Argo `targetRevision`.
+Published versions are **`1.0.*`**. `Chart.yaml` and `pyproject.toml` use **`1.0.0`** as the development baseline. A push to `main` publishes the image as **`1.0.YYYYMMDDHHMMSS`** and a Helm chart with the same version and `appVersion`. Registries and rollouts are GitHub settings, not files in this repository. A fork sets its own values and does not inherit these.
+
+Repository variables, under Settings → Secrets and variables → Actions → Variables:
+
+| Variable | Value |
+|----------|--------|
+| `RELEASE_HOSTS` | Registry hosts, one per line. The image and chart are pushed to every host before any rollout. |
+| `ROLLOUT_ENVIRONMENTS` | GitHub Environment names, separated by spaces, commas, or new lines. |
+
+Each name in `ROLLOUT_ENVIRONMENTS` is an environment with a required reviewer and deployment limited to `main`. Approving one does not roll out the others. On each environment set:
+
+| Kind | Name | Value |
+|------|------|--------|
+| Variable | `UPDATER_URL` | Updater URL, including the `/gitops-updater` path. |
+| Variable | `UPDATER_CONFIG` | Config `name` to pass to that updater. |
+| Variable | `UPDATER_SECRET_NAME` | Name of the organization secret that holds the updater secret. |
+| Secret | the name in `UPDATER_SECRET_NAME` | Organization secret, shared with this repository and limited to that environment. |
+
+This branch still passes the updater secret as a query parameter. The Deployment image tag is that `appVersion` unless `tag` is set, so a new release changes the pod spec and Kubernetes recreates the pod. Older **`0.5.*`** chart versions stay on that line until a deploy moves `targetRevision` to a **`1.0.*`** version that is semver-greater.
 
 Development
 -

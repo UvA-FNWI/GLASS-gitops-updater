@@ -16,10 +16,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Read uv version
+        id: uv
+        run: |
+          version=$(sed -n 's/^FROM ghcr.io\/astral-sh\/uv:\([^@[:space:]]*\).*/\1/p' Dockerfile)
+          if [ -z "${version}" ]; then
+            echo "Dockerfile does not pin ghcr.io/astral-sh/uv" >&2
+            exit 1
+          fi
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+
       - name: Install uv
         uses: astral-sh/setup-uv@v6
         with:
-          version: "0.9.0"
+          version: ${{ steps.uv.outputs.version }}
 
       - name: Set up Python
         uses: actions/setup-python@v5

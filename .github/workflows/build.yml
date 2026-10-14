@@ -11,16 +11,23 @@ jobs:
   plan:
     runs-on: ubuntu-latest
     outputs:
-      registries: ${{ steps.targets.outputs.registries }}
       rollouts: ${{ steps.targets.outputs.rollouts }}
       hosts: ${{ steps.targets.outputs.hosts }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
       - name: Read release targets
         id: targets
-        run: python3 scripts/release_targets.py plan .github/release-targets.yaml
+        env:
+          RELEASE_HOSTS: ${{ vars.RELEASE_HOSTS }}
+          ROLLOUT_ENVIRONMENTS: ${{ vars.ROLLOUT_ENVIRONMENTS }}
+        run: python scripts/release_targets.py
 
   publish:
     needs: plan
@@ -56,20 +63,27 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: ${{ fromJson(needs.plan.outputs.rollouts) }}
-    environment: ${{ matrix.target.name }}
+        environment: ${{ fromJson(needs.plan.outputs.rollouts) }}
+    environment: ${{ matrix.environment }}
     steps:
-      - name: Roll out ${{ matrix.target.name }}
+      - name: Roll out ${{ matrix.environment }}
         env:
-          UPDATER_SECRET: ${{ secrets[matrix.target.secret] }}
+          UPDATER_SECRET: ${{ secrets[vars.UPDATER_SECRET_NAME] }}
+          UPDATER_URL: ${{ vars.UPDATER_URL }}
+          UPDATER_CONFIG: ${{ vars.UPDATER_CONFIG }}
+          UPDATER_SECRET_NAME: ${{ vars.UPDATER_SECRET_NAME }}
           VERSION: ${{ needs.publish.outputs.version }}
         run: |
           set -euo pipefail
+          if [ -z "${UPDATER_URL}" ] || [ -z "${UPDATER_CONFIG}" ] || [ -z "${UPDATER_SECRET_NAME}" ]; then
+            echo "environment ${{ matrix.environment }} is missing UPDATER_URL, UPDATER_CONFIG, or UPDATER_SECRET_NAME" >&2
+            exit 1
+          fi
           if [ -z "${UPDATER_SECRET}" ]; then
-            echo "missing GitHub secret ${{ matrix.target.secret }}" >&2
+            echo "missing GitHub secret ${UPDATER_SECRET_NAME}" >&2
             exit 1
           fi
           echo "::add-mask::${UPDATER_SECRET}"
           # Bearer replaces the query secret once the image from this branch is serving.
           curl -fsS \
-            "${{ matrix.target.url }}?name=${{ matrix.target.config }}&secret=${UPDATER_SECRET}&version=${VERSION}"
+            "${UPDATER_URL}?name=${UPDATER_CONFIG}&secret=${UPDATER_SECRET}&version=${VERSION}"

@@ -1,12 +1,15 @@
 # syntax=docker/dockerfile:1
 
+# Named stage so Dependabot updates this image. CI installs the same tag.
+FROM ghcr.io/astral-sh/uv:0.13.0@sha256:cdc6093146eb3ff6a40107b38f008b789e050e77ad87865e381d9917da55a168 AS uv
+
 FROM python:3.14-alpine AS builder
 
 RUN apk update && apk upgrade \
     && apk add --no-cache gcc musl-dev libffi-dev make \
     && rm -rf /var/cache/apk/*
 
-COPY --from=ghcr.io/astral-sh/uv:0.9.0@sha256:8f926a80debadba6f18442030df316c0e2b28d6af62d1292fb44b1c874173dc0 /uv /usr/local/bin/uv
+COPY --from=uv /uv /usr/local/bin/uv
 
 WORKDIR /app
 

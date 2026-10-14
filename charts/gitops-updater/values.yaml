@@ -3,7 +3,9 @@ ingressClass: "nginx"
 image: gitops-updater
 # Empty tag uses Chart.AppVersion, which CI sets to VERSION when packaging the chart.
 tag: ""
-clusterIssuer: letsencrypt
+# Empty leaves TLS to the ingress controller default certificate.
+# Set a ClusterIssuer name when cert-manager should issue gitops-updater-cert.
+clusterIssuer: ""
 
 config:
   - name: example-name
