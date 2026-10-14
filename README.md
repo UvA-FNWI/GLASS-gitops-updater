@@ -117,6 +117,8 @@ Build the container image:
 docker build -t gitops-updater:local .
 ```
 
+The image uses a multi-stage build: compile dependencies in a builder stage, then copy only the virtualenv into a slim runtime image (no compiler toolchain in production).
+
 Run the same checks as PR CI (no cluster or remote GitOps repo required):
 
 ```sh

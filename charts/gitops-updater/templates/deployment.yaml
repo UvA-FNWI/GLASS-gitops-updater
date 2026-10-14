@@ -12,7 +12,14 @@ spec:
     metadata:
       labels:
         app: gitops-updater
+      {{- if .Values.azure }}
+        azure.workload.identity/use: "true"
+      {{- end }}
     spec:
+      automountServiceAccountToken: false
+      {{- if .Values.azure }}
+      serviceAccountName: gitops-updater-sa
+      {{- end }}
       {{- with (include "gitops-updater.imagePullSecretName" .) }}
       imagePullSecrets:
         - name: {{ . }}
@@ -43,6 +50,18 @@ spec:
             - secretRef:
                 name: {{ . }}
           {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 10
           resources:
             limits:
               cpu: 100m

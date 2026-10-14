@@ -1,7 +1,4 @@
 target-version = "py314"
 
-# Lint tests first; remove extend-exclude after a dedicated ruff pass on gitops_updater (PR 2+).
-extend-exclude = ["gitops_updater"]
-
 [lint]
 ignore = ["TRY002", "BLE001", "B017"]
