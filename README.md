@@ -102,7 +102,7 @@ Only when the requested version (`1.0.1`) is higher than the current one, it wil
 
 Releases
 -
-The FNWI release line is **`1.0.*`**. `Chart.yaml` and `pyproject.toml` use **`1.0.0`** as the development baseline; CI on `main` publishes the image as **`1.0.YYYYMMDDHHMMSS`** and a Helm chart with the same version and `appVersion` to OCI, then bumps the DataNose GitOps `targetRevision` via the updater API. The Deployment image tag is that `appVersion` unless `tag` is set, so a new release changes the pod spec and Kubernetes recreates the pod. Older **`0.5.*`** chart versions in GitOps are the pre-FNWI line; the first deploy after this change must use a **`1.0.*`** chart version **semver-greater** than the current Argo `targetRevision`.
+The FNWI release line is **`1.0.*`**. `Chart.yaml` and `pyproject.toml` use **`1.0.0`** as the development baseline. CI on `main` publishes the image as **`1.0.YYYYMMDDHHMMSS`** and a Helm chart with the same version and `appVersion` to every registry in [`.github/release-targets.yaml`](.github/release-targets.yaml). Each rollout in that file waits for its own GitHub Environment approval and then calls that updater. Approving `datanose` does not roll out `k8s`, and the other way around. This branch still passes the updater secret as a query parameter. The Deployment image tag is that `appVersion` unless `tag` is set, so a new release changes the pod spec and Kubernetes recreates the pod. Older **`0.5.*`** chart versions in GitOps are the pre-FNWI line; the first deploy after this change must use a **`1.0.*`** chart version **semver-greater** than the current Argo `targetRevision`.
 
 Development
 -
