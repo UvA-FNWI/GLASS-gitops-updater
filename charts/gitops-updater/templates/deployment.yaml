@@ -10,6 +10,8 @@ spec:
   replicas: 1
   template:
     metadata:
+      annotations:
+        gitops-updater/release: "{{ .Chart.AppVersion }}"
       labels:
         app: gitops-updater
       {{- if .Values.azure }}
@@ -17,6 +19,9 @@ spec:
       {{- end }}
     spec:
       automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       {{- if .Values.azure }}
       serviceAccountName: gitops-updater-sa
       {{- end }}
@@ -26,7 +31,7 @@ spec:
       {{- end }}
       containers:
         - name: gitops-updater
-          image: "{{ .Values.image }}:{{ .Values.tag }}"
+          image: "{{ .Values.image }}:{{ .Values.tag | default .Chart.AppVersion }}"
           imagePullPolicy: Always
           securityContext:
             privileged: false

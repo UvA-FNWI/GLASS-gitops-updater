@@ -1,4 +1,5 @@
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -127,6 +128,37 @@ def test_invalid_template_id_returns_safe_error(client, monkeypatch):
     )
     assert response.status_code == 422
     assert response.json["error"] == "Invalid request"
+
+
+def test_blocked_downgrade_returns_409(client, monkeypatch):
+    provider = MagicMock()
+    file_mock = MagicMock()
+    file_mock.content.return_value = """\
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: test-app
+spec:
+  source:
+    targetRevision: 2.0.0
+"""
+    provider.get_file.return_value = file_mock
+    monkeypatch.setattr(
+        ConfigReader,
+        "find_provider",
+        lambda self, _filename, _name: provider,
+    )
+
+    response = client.get(
+        "/gitops-updater",
+        query_string={"name": "test-app", "version": "1.0.0"},
+        headers={"Authorization": "Bearer top-secret"},
+    )
+
+    assert response.status_code == 409
+    assert response.json["message"] == "error"
+    assert any("not downgrading" in error for error in response.json["errors"])
+    provider.update_file.assert_not_called()
 
 
 def test_query_secret_success_includes_deprecation(client, monkeypatch):

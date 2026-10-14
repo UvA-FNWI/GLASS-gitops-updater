@@ -1,17 +1,22 @@
 stages:
   - build
+  - release
 
 build-containers:
   stage: build
   script:
     - set -euo pipefail
-    - docker build -t "${CR_NAME}/gitops-updater:latest" -f Dockerfile .
-    - docker push "${CR_NAME}/gitops-updater:latest"
+    - export VERSION=$(date "+1.0.%Y%m%d%H%M%S")
+    - echo "VERSION=${VERSION}" > version.env
+    - docker build -t "${CR_NAME}/gitops-updater:${VERSION}" -f Dockerfile .
+    - docker push "${CR_NAME}/gitops-updater:${VERSION}"
+  artifacts:
+    reports:
+      dotenv: version.env
 
 build-charts:
-  stage: build
+  stage: release
   script:
     - set -euo pipefail
-    - export VERSION=$(date "+0.1.%Y%m%d%H%M%S")
     - helm package --version "${VERSION}" --app-version "${VERSION}" charts/gitops-updater
     - helm push "gitops-updater-${VERSION}.tgz" ${HELM_REPO}
